@@ -14,23 +14,30 @@ class VistaAutorizador(Resource):
         rutas_lectura = ['historia-clinica']
 
         target_Url = request.headers.get('Target-Url')
+        print(target_Url)
+        target_route = target_Url.split('/')[-1:][0]
+        print(target_route)
 
         usuario_id = get_jwt_identity()
         usuario = Usuario.query.get(usuario_id)
+        print(usuario.rol)
+
+        if usuario.rol == Rol.BASICO:
+            return {}, 403
 
         if usuario.rol == Rol.LECTURA:
-            ruta = (list(filter(lambda x: target_Url in x, rutas_lectura))[:1] or [None])[0]
-            if ruta is None or ruta != target_Url:
+            ruta = (list(filter(lambda x: target_route in x, rutas_lectura))[:1] or [None])[0]
+            print(ruta)
+            if ruta is None or ruta != target_route:
                 return {}, 403
 
         if usuario.rol == Rol.SUPERADMIN:
-            ruta = (list(filter(lambda x: target_Url in x, rutas_superusuario))[:1] or [None])[0]
-            if ruta is None or ruta != target_Url:
+            ruta = (list(filter(lambda x: target_route in x, rutas_superusuario))[:1] or [None])[0]
+            print(ruta)
+            if ruta is None or ruta != target_route:
                 return {}, 403
 
         return {}, 200
-
-
 
 class VistaLogIn(Resource):
     
