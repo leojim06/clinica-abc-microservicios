@@ -1,3 +1,0 @@
-from .vistas import *
-
-
