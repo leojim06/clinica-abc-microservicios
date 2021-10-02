@@ -1,14 +1,41 @@
-from flaskr.modelos.modelos import db, UsuarioSchema, Usuario
-from flask_jwt_extended import jwt_required, create_access_token
+from flaskr.modelos.modelos import db, UsuarioSchema, Usuario, Rol
+from flask_jwt_extended import jwt_required, create_access_token, get_jwt_identity
 from flask_restful import Resource
 from flask import request
 
 usuario_schema = UsuarioSchema()
 
+class VistaAutorizador(Resource):
+    
+    @jwt_required()
+    def post(self):
+
+        rutas_superusuario = ['historia-clinica', 'registro']
+        rutas_lectura = ['historia-clinica']
+
+        target_Url = request.headers.get('Target-Url')
+
+        usuario_id = get_jwt_identity()
+        usuario = Usuario.query.get(usuario_id)
+
+        if usuario.rol == Rol.LECTURA:
+            ruta = (list(filter(lambda x: target_Url in x, rutas_lectura))[:1] or [None])[0]
+            if ruta is None or ruta != target_Url:
+                return {}, 403
+
+        if usuario.rol == Rol.SUPERADMIN:
+            ruta = (list(filter(lambda x: target_Url in x, rutas_superusuario))[:1] or [None])[0]
+            if ruta is None or ruta != target_Url:
+                return {}, 403
+
+        return {}, 200
+
+
+
 class VistaLogIn(Resource):
     
     def post(self):
-        usuario = Usuario.query.filter_by(Usuario.nombre == request.json["nombre"], Usuario.contrasena == request.json["contrasena"]).first()
+        usuario = Usuario.query.filter_by(nombre=request.json["nombre"], contrasena=request.json["contrasena"]).first()
         db.session.commit()
         if usuario is None:
             return {'mensaje': 'Nombre de usuario o contraseña incorrectos'}, 404
